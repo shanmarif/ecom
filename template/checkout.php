@@ -52,7 +52,6 @@
                         </div>
                         <p class="para small">Pay via Stripe: Accepts major credit cards.</p>
 
-                        <!-- Add Publishable and Secret Keys -->
 
                         <!-- Direct Bank Transfer Section -->
                         <div class="gtwys">
