@@ -6,8 +6,8 @@
 				<div class="meta-box-sortables ui-sortable">
 				<form method="post">
 				<?php
-					$context['packages_obj']->prepare_items();
-					$context['packages_obj']->display(); 
+					$context['orders_obj']->prepare_items();
+					$context['orders_obj']->display(); 
 				?>
 				</form>
 				</div>

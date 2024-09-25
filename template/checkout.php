@@ -52,6 +52,9 @@
                         </div>
                         <p class="para small">Pay via Stripe: Accepts major credit cards.</p>
 
+                        <!-- Add Publishable and Secret Keys -->
+                        <input type="hidden" name="stripe_publishable_key" value="<?php echo STRIPE_PUBLIC_KEY; ?>">
+                        <input type="hidden" name="stripe_secret_key" value="<?php echo STRIPE_SECRET_KEY; ?>">
 
                         <!-- Direct Bank Transfer Section -->
                         <div class="gtwys">

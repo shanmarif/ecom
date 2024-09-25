@@ -373,8 +373,8 @@ function add_product_to_cart() {
         die();
     } else {
     	$base64File = "-";
-    	if(isset($_FILES['trademark_logo']) && !empty($_FILES['trademark_logo'])){
-			$uploadedfile = $_FILES['trademark_logo'];
+    	if(isset($_FILES['product_images']) && !empty($_FILES['product_images'])){
+			$uploadedfile = $_FILES['product_images'];
 			if(!empty($uploadedfile['tmp_name'])){
 				$sUploadFile = file_get_contents($uploadedfile['tmp_name']);
 				$type = pathinfo($uploadedfile['name'], PATHINFO_EXTENSION);
@@ -400,10 +400,67 @@ function add_product_to_cart() {
 			'product_name' => $_POST['product_name'],
 			'notes' => $_POST['notes']
 		];
+		$aTradeMarkData['customer'] = [
+			'email' => $_POST['email'],
+			'name' => $_POST['name'],
+			'phone' => $_POST['phone'],
+			'type' => $_POST['product_type']
+		];
 		set_session_value('trademark_data', $aTradeMarkData);
         // do your function here 
         wp_redirect('/cart');
         exit();
+    }
+}
+
+function save_base64_image($base64Image, $post_id = 0) {
+    // Get the upload directory
+    $upload_dir = wp_upload_dir();
+
+    // Split the base64 string into the type and the data
+    list($type, $data) = explode(';', $base64Image);
+    list(, $data) = explode(',', $data);
+    
+    // Check the image type (e.g., png, jpeg)
+    if (strpos($type, 'image/') !== false) {
+        $image_type = str_replace('data:image/', '', $type); // Get the file extension
+    } else {
+        return new WP_Error('invalid_image_type', 'Invalid image type');
+    }
+
+    // Decode the base64 string
+    $decoded_image = base64_decode($data);
+
+    // Generate a unique file name
+    $filename = uniqid() . '.' . $image_type;
+
+    // Full path to the upload directory
+    $filepath = $upload_dir['path'] . '/' . $filename;
+
+    // Save the image file
+    if (file_put_contents($filepath, $decoded_image)) {
+        // Get the file type (MIME type)
+        $filetype = wp_check_filetype($filename, null);
+
+        // Prepare an array of post data for the attachment
+        $attachment = array(
+            'post_mime_type' => $filetype['type'],
+            'post_title' => sanitize_file_name($filename),
+            'post_content' => '',
+            'post_status' => 'inherit'
+        );
+
+        // Insert the attachment into the media library
+        $attach_id = wp_insert_attachment($attachment, $filepath, $post_id);
+
+        // Generate metadata for the attachment, and update the attachment meta
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+        $attach_data = wp_generate_attachment_metadata($attach_id, $filepath);
+        wp_update_attachment_metadata($attach_id, $attach_data);
+
+        return $attach_id; // Return the attachment ID
+    } else {
+        return new WP_Error('image_save_error', 'Failed to save the image');
     }
 }
 
@@ -488,17 +545,40 @@ function generateOrder($sPaymentMethod){
 	try {
 		global $wpdb;
 		$aOrderDetails = getCartDetails();
+		if(isset($aOrderDetails["aCustomerDetails"])){
+			$sCustomerName = $aOrderDetails["aCustomerDetails"]["name"] ?? "-";
+			$sCustomerEmail = $aOrderDetails["aCustomerDetails"]["email"] ?? "-";
+			$sCustomerPhone = $aOrderDetails["aCustomerDetails"]["phone"] ?? "";
+		} else {
+			$sCustomerName = "-";
+			$sCustomerEmail = "-";
+			$sCustomerPhone = "";
+		}
+
 		$wpdb->insert("{$wpdb->prefix}simple_ecom_orders", [
 			"payment_method" => $sPaymentMethod,
-			"grand_total" => $aOrderDetails['iGrandTotal']
+			"grand_total" => $aOrderDetails['iGrandTotal'],
+			"name" => $sCustomerName,
+			"email" => $sCustomerEmail,
+			"phone_number" => $sCustomerPhone
 		]);
+
+		$aContacts[$sCustomerEmail] = $sCustomerName;
+
 		$iOrderId = $wpdb->insert_id;
 		foreach($aOrderDetails['aItems'] as $aItem){
 			$aItem['order_id'] = $iOrderId;
 			unset($aItem['package_name'], $aItem['product_name']);
-			if(!empty($aItem['email']) && !empty($aItem['name']))
+			if(!empty($aItem['email']) && !empty($aItem['name'])) {
 				$aContacts[$aItem['email']] = $aItem['name'];
+			}
 			unset($aItem['package_type']);
+			if(!empty($aItem['logo_file'])){
+				$attachmentId = save_base64_image($aItem["logo_file"]);
+				if (!is_wp_error($attachmentId)) {
+					$aItem["logo_file"] = $attachmentId;
+				}
+			}
 			$wpdb->insert("{$wpdb->prefix}simple_ecom_order_items", $aItem);
 		}
 		$aOrderDetails['contacts'] = $aContacts;
@@ -506,7 +586,7 @@ function generateOrder($sPaymentMethod){
 		$aOrderDetails['sPaymentMethod'] = $sPaymentMethod;
 		return $aOrderDetails;
 	} catch(\Exception $e){
-		echo "<pre>";print_r($e);exit;
+		error_log($e);
 	}
 }
 
@@ -629,13 +709,14 @@ function getCartDetails(){
 		    		'type' => 'additional_service',
 		    		'total' => $iServicePrice,
 		    	];
-		    	$aItem[] = $aItemDetails; 
+		    	$aItem[] = $aItemDetails;
 		    	$iGrandTotal += $iServicePrice;
 		    }
 		}
 	    return [
 	    	'aItems' => $aItem,
-	    	'iGrandTotal' => $iGrandTotal
+	    	'iGrandTotal' => $iGrandTotal,
+			'aCustomerDetails' => isset($aCartDetails['customer']) ? $aCartDetails['customer'] : []
 	    ];
 	}
 }
