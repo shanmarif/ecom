@@ -53,8 +53,6 @@
                         <p class="para small">Pay via Stripe: Accepts major credit cards.</p>
 
                         <!-- Add Publishable and Secret Keys -->
-                        <input type="hidden" name="stripe_publishable_key" value="pk_live_51OZ8sJGoybQn62h8cho0nz7vDSew5qf5y3e0YnM04JHgzsWFqPvDYOQtcaQ3ALLiCt8DIHY3YWE5GKES2ttRXfxk00mKHOsyJg">
-                        <input type="hidden" name="stripe_secret_key" value="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">
 
                         <!-- Direct Bank Transfer Section -->
                         <div class="gtwys">
