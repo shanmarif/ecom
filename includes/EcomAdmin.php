@@ -74,7 +74,7 @@ class EcomAdmin {
 			'add_new',
 			[ $this, 'insert_product' ]
 		);
-		add_submenu_page(
+		$order = add_submenu_page(
 			'simple_ecom_controlpanel',
 			'View Orders',
 			'Orders',
@@ -185,10 +185,14 @@ class EcomAdmin {
 	* Order List Page
 	*/
 	public function order_list_page() {
-		$aData = [
-			'orders_obj' => $this->orders_obj
-		];
-        echo render_template('order-admin.php', $aData);
+		if(isset($_REQUEST['action']) && in_array($_REQUEST['action'], ["view"])){
+			echo $this->view_order_details();
+		} else {
+			$aData = [
+				'orders_obj' => $this->orders_obj
+			];
+			echo render_template('order-admin.php', $aData);
+		}
 	}
 
 	/**
@@ -268,6 +272,16 @@ class EcomAdmin {
 			wp_redirect('/wp-admin/admin.php?page=simple_ecom_controlpanel');
 			exit;
 		}
+	}
+
+	public function view_order_details(){
+	    $oEcomModel = new EcomModel();
+	    if(isset($_REQUEST['order_id']) && !empty($_REQUEST['order_id'])){
+	    	$id = $_REQUEST['order_id'];
+			$aData['order_details'] = $oEcomModel->getOrderDetails($id);
+		    $aData['action'] = 'view_order_details';
+		}
+		echo render_template('view-order.php', $aData);
 	}
 
 	public function add_new_group()

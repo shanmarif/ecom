@@ -325,8 +325,45 @@ class EcomModel {
     public function getAllOrders($limit = 25, $offset = 0){
 		global $wpdb;
         $sSql = "SELECT * FROM {$wpdb->prefix}simple_ecom_orders o
-		INNER JOIN {$wpdb->prefix}simple_ecom_order_items oi ON oi.order_id = o.id LIMIT = {$limit} OFFSET = {$offset}";
+		LIMIT = {$limit} OFFSET = {$offset}";
         $aResult = $wpdb->get_results($sSql, 'ARRAY_A');
 		return $aResult;
     }
+
+	public function getOrderDetails($id){
+		global $wpdb;
+        $sSql = "SELECT
+			o.name,
+			o.email,
+			o.phone_number,
+			o.payment_method,
+			o.grand_total,
+			oi.type,
+			oi.addon_ids,
+			oi.trademark_type,
+			oi.trademark_text,
+			oi.logo_file,
+			oi.trademark_inuse,
+			oi.trademark_date,
+			oi.additional_notes,
+			oi.total,
+			p.name,
+			pp.slug as package_name
+		FROM {$wpdb->prefix}simple_ecom_orders o
+		INNER JOIN {$wpdb->prefix}simple_ecom_order_items oi ON o.id = oi.order_id
+		LEFT JOIN {$wpdb->prefix}simple_ecom_product_pricing pprc on pprc.id = oi.pricing_id
+		LEFT JOIN {$wpdb->prefix}simple_ecom_packages pp ON pp.id = pprc.package_id
+		LEFT JOIN {$wpdb->prefix}simple_ecom_products p on p.id = pprc.product_id
+		where oi.order_id = {$id}";
+        $aResult = $wpdb->get_results($sSql, 'ARRAY_A');
+
+		foreach($aResult as $iIndex => $aItem){
+			if(isset($aItem['addon_ids']) && !empty($aItem['addon_ids'])){
+				$sSql = "SELECT * FROM {$wpdb->prefix}simple_ecom_addons where id IN ({$aItem['addon_ids']})";
+				$aAddonResult = $wpdb->get_results($sSql, 'ARRAY_A');
+				$aResult[$iIndex]['addon_details'] = $aAddonResult;
+			}
+		}
+		return $aResult;
+	}
 }

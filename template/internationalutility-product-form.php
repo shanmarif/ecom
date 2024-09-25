@@ -52,6 +52,7 @@
         <input name="product_name" value="<?php echo $newProductTitle; ?>" type="hidden" />
         <input name="package_name" value="<?php echo $aProductDetails['name']; ?>" type="hidden" />
         <input name="product_id" value="<?php echo $aProductDetails['prod_id']; ?>" type="hidden" />
+        <input name="product_type" value="<?php echo $aProductDetails['prod_type']; ?>" type="hidden">
         <div class="container">
             <div class="row">
                 <div class="flex-box">

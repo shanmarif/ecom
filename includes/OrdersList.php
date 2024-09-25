@@ -21,17 +21,24 @@ class Orders_List extends WP_List_Table {
 	*
 	* @return mixed
 	*/
-	public static function get_products( $per_page = 25, $page_number = 1 ) {
+	public static function get_orders( $per_page = 25, $page_number = 1 ) {
 		global $wpdb;
 		$sql = "SELECT 
-				ep.id,
-				epg.name as group_name
-			FROM {$wpdb->prefix}simple_ecom_products ep
-			LEFT JOIN {$wpdb->prefix}simple_ecom_groups epg ON epg.id = ep.group_id";
+				o.id,
+				o.name,
+				o.email,
+				o.phone_number,
+				o.payment_method,
+				o.grand_total,
+				o.status,
+				o.payment_date
+			FROM {$wpdb->prefix}simple_ecom_orders o";
 
 		if ( ! empty( $_REQUEST['orderby'] ) ) {
 			$sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
-			$sql .= ! empty( $_REQUEST['order'] ) ? ' ' . esc_sql( $_REQUEST['order'] ) : ' ASC';
+			$sql .= ! empty( $_REQUEST['order'] ) ? ' ' . esc_sql( $_REQUEST['order'] ) : ' DESC';
+		} else {
+			$sql .= ' ORDER BY o.id DESC';
 		}
 
 		$sql .= " LIMIT $per_page";
@@ -39,62 +46,7 @@ class Orders_List extends WP_List_Table {
 		$sql .= ' OFFSET ' . ( $page_number - 1 ) * $per_page;
 
 		$result = $wpdb->get_results( $sql, 'ARRAY_A' );
-		if(!empty($result)){
-			$aProductIds = array_column($result, 'id');
-			$sProductIds = implode(",", $aProductIds);
-			$sql = "SELECT 
-					ep.id, 
-					ep.name, 
-					ep.type,
-					epg.name as group_name,
-					ep.created_at,
-					ep.updated_at,
-					p.name as package_name,
-					epp.price,
-					epp.package_details
-				FROM {$wpdb->prefix}simple_ecom_products ep
-				LEFT JOIN {$wpdb->prefix}simple_ecom_groups epg ON epg.id = ep.group_id
-				LEFT JOIN {$wpdb->prefix}simple_ecom_product_pricing epp on epp.product_id = ep.id
-				LEFT JOIN {$wpdb->prefix}simple_ecom_packages p on epp.package_id = p.id
-				WHERE ep.id IN ({$sProductIds})";
-
-			if ( ! empty( $_REQUEST['orderby'] ) ) {
-				$sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
-				$sql .= ! empty( $_REQUEST['order'] ) ? ' ' . esc_sql( $_REQUEST['order'] ) : ' ASC';
-			}
-
-			$result = $wpdb->get_results( $sql, 'ARRAY_A' );
-
-			foreach($result as $productprice){
-				if(!isset($aData[$productprice['id']])){
-					$aData[$productprice['id']] = [
-						"id" => $productprice['id'],
-						"name" => $productprice['name'],
-						"type" => ucwords($productprice['type']),
-						"group_name" => $productprice['group_name'],
-						"created_at" => $productprice['created_at'],
-						"updated_at" => $productprice['updated_at']
-					];
-				}
-				if(!empty($productprice['package_name'])){
-					$aData[$productprice['id']][$productprice['package_name']] = "$".$productprice['price'];
-				}
-			}
-			return array_values($aData);
-		}
-		return [];
-	}
-
-	/**
-	* Delete a customer record.
-	*
-	* @param int $id customer ID
-	*/
-	public static function delete_product( $id ) {
-		global $wpdb;
-		$wpdb->delete( "{$wpdb->prefix}simple_ecom_product_pricing", [ 'product_id' => $id ], [ '%d' ]);
-		$wpdb->delete( "{$wpdb->prefix}simple_ecom_product_addon_relation", [ 'product_id' => $id ], [ '%d' ]);
-		$wpdb->delete( "{$wpdb->prefix}simple_ecom_products", [ 'id' => $id ], [ '%d' ]);
+		return $result;
 	}
 
 	/**
@@ -126,14 +78,12 @@ class Orders_List extends WP_List_Table {
 	*/
 	function column_name( $item ) {
 		// create a nonce
-		$delete_nonce = wp_create_nonce( 'sp_delete_product' );
-		$edit_nonce = wp_create_nonce( 'sp_edit_product' );
+		$view_nonce = wp_create_nonce( 'sp_view_order' );
 
 		$title = '<strong>' . $item['name'] . '</strong>';
 
 		$actions = [
-			'edit' => sprintf( '<a href="?page=%s&action=%s&product=%s">Edit</a>', esc_attr( $_REQUEST['page'] ), 'edit', absint( $item['id'] ) ),
-			'delete' => sprintf( '<a href="?page=%s&action=%s&product=%s&_wpnonce=%s">Delete</a>', esc_attr( $_REQUEST['page'] ), 'delete', absint( $item['id'] ), $delete_nonce )
+			'view' => sprintf( '<a href="?page=%s&action=%s&order_id=%s">View Order Details</a>', esc_attr( $_REQUEST['page'] ), 'view', absint( $item['id'] ), $view_nonce )
 		];
 
 		return $title . $this->row_actions( $actions );
@@ -170,9 +120,11 @@ class Orders_List extends WP_List_Table {
 	public function get_columns() {
 		$columns = [
 			'cb' => '<input type="checkbox" />',
-			'name' => __( 'Product', 'sp' ),
-			'type' => __( 'P. Type', 'sp' ),
-			'group_name' => __( 'Group', 'sp' )
+			'name' => __( 'Name', 'sp' ),
+			'email' => __( 'Email', 'sp' ),
+			'phone_number' => __( 'Phone No.', 'sp' ),
+			'payment_method' => __( 'Payment Method', 'sp' ),
+			'grand_total' => __( 'Order Amount', 'sp' )
 		];
 		$columns = array_merge($columns, $this->columns);
 		$columns['created_at'] = __( 'Created at', 'sp' );
@@ -188,8 +140,8 @@ class Orders_List extends WP_List_Table {
 	public function get_sortable_columns() {
 		$sortable_columns = array(
 			'name' => array( 'name', true ),
-			'type' => array( 'type', true ),
-			'group_name' => array( 'group_name', false )
+			'email' => array( 'email', true ),
+			'payment_method' => array( 'payment_method', false )
 		);
 
 		return $sortable_columns;
@@ -201,9 +153,7 @@ class Orders_List extends WP_List_Table {
 	* @return array
 	*/
 	public function get_bulk_actions() {
-		$actions = [
-		'bulk-delete' => 'Delete'
-		];
+		$actions = [];
 
 		return $actions;
 	}
@@ -217,7 +167,7 @@ class Orders_List extends WP_List_Table {
 		/** Process bulk action */
 		$this->process_bulk_action();
 
-		$per_page = $this->get_items_per_page( 'products_per_page', 20 );
+		$per_page = $this->get_items_per_page( 'orders_per_page', 25 );
 		$current_page = $this->get_pagenum();
 		$total_items = self::record_count();
 
@@ -226,7 +176,7 @@ class Orders_List extends WP_List_Table {
 			'per_page' => $per_page //WE have to determine how many items to show on a page
 		] );
 
-		$this->items = self::get_products( $per_page, $current_page );
+		$this->items = self::get_orders( $per_page, $current_page );
 	}
 
 	public function process_bulk_action() {
