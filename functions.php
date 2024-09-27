@@ -518,15 +518,15 @@ function checkout(){
 			switch ($_POST['paymentmethod']){
 				case "paypal":
 					$aParamDetails = generatePaypalOrder($aOrderDetail);
-					// sendOrderGenerateNotificationToCustomer($aOrderDetail);
+					sendOrderGenerateNotificationToCustomer($aOrderDetail);
 					break;
 				case "stripe":
 					$aParamDetails = generateStripeOrder($aOrderDetail);
-					// sendOrderGenerateNotificationToCustomer($aOrderDetail);
+					sendOrderGenerateNotificationToCustomer($aOrderDetail);
 					break;
 				case "worldpay":
 					$aParamDetails = generateWorldPayOrder($aOrderDetail);
-					// sendOrderGenerateNotificationToCustomer($aOrderDetail);
+					sendOrderGenerateNotificationToCustomer($aOrderDetail);
 					break;
 				default:
 					sendOrderGenerateNotificationToCustomer($aOrderDetail);
