@@ -374,11 +374,13 @@ function add_product_to_cart() {
     } else {
     	$base64File = "-";
     	if(isset($_FILES['product_images']) && !empty($_FILES['product_images'])){
-			$uploadedfile = $_FILES['product_images'];
-			if(!empty($uploadedfile['tmp_name'])){
-				$sUploadFile = file_get_contents($uploadedfile['tmp_name']);
-				$type = pathinfo($uploadedfile['name'], PATHINFO_EXTENSION);
-				$base64File = 'data:image/' . $type . ';base64,' . base64_encode($sUploadFile);
+			$uploadedfiles = $_FILES['product_images'];
+			foreach($uploadedfiles as $uploadedfile) {
+				if(!empty($uploadedfile['tmp_name'])){
+					$sUploadFile = file_get_contents($uploadedfile['tmp_name']);
+					$type = pathinfo($uploadedfile['name'], PATHINFO_EXTENSION);
+					$base64File[] = 'data:image/' . $type . ';base64,' . base64_encode($sUploadFile);
+				}
 			}
 		}
 		$aTradeMarkData = get_session_value('trademark_data',[]);
@@ -518,15 +520,15 @@ function checkout(){
 			switch ($_POST['paymentmethod']){
 				case "paypal":
 					$aParamDetails = generatePaypalOrder($aOrderDetail);
-					// sendOrderGenerateNotificationToCustomer($aOrderDetail);
+					sendOrderGenerateNotificationToCustomer($aOrderDetail);
 					break;
 				case "stripe":
 					$aParamDetails = generateStripeOrder($aOrderDetail);
-					// sendOrderGenerateNotificationToCustomer($aOrderDetail);
+					sendOrderGenerateNotificationToCustomer($aOrderDetail);
 					break;
 				case "worldpay":
 					$aParamDetails = generateWorldPayOrder($aOrderDetail);
-					// sendOrderGenerateNotificationToCustomer($aOrderDetail);
+					sendOrderGenerateNotificationToCustomer($aOrderDetail);
 					break;
 				default:
 					sendOrderGenerateNotificationToCustomer($aOrderDetail);
@@ -574,10 +576,15 @@ function generateOrder($sPaymentMethod){
 			}
 			unset($aItem['package_type']);
 			if(!empty($aItem['logo_file'])){
-				$attachmentId = save_base64_image($aItem["logo_file"]);
-				if (!is_wp_error($attachmentId)) {
-					$aItem["logo_file"] = $attachmentId;
+				$files = $aItem['logo_file'];
+				$iLogoFile = [];
+				foreach($files as $key => $log_file){
+					$attachmentId = save_base64_image($log_file);
+					if (!is_wp_error($attachmentId)) {
+						$iLogoFile[] = $attachmentId;
+					}
 				}
+				$aItem["logo_file"] = implode(",", $iLogoFile);
 			}
 			$wpdb->insert("{$wpdb->prefix}simple_ecom_order_items", $aItem);
 		}

@@ -111,7 +111,10 @@
                     <?php
                     // Display the image from the media attachment ID
                     if (!empty($entry['logo_file'])) {
-                        echo wp_get_attachment_image($entry['logo_file'], 'medium', false, array('class' => 'logo-image'));
+                        $aLogoFile = strpos($entry['logo_file'], ",") === true ? explode(",",$entry['logo_file']) : [$entry['logo_file']];
+                        foreach($entry['logo_file'] as $logoFile) {
+                            echo wp_get_attachment_image($logoFile, 'medium', false, array('class' => 'logo-image'));
+                        }
                     } else {
                         echo 'No logo uploaded.';
                     }

@@ -57,8 +57,8 @@ $(document).ready(function(){
 			e.currentTarget.submit();
 		}
 	})*/
-	$('input[name="trademark_logo"]').change(function () {
-		var file = $('input[name="trademark_logo"]')[0].files[0].name;
+	$('input[name="product_images"]').change(function () {
+		var file = $('input[name="product_images"]')[0].files[0].name;
   		$(".filename").text(file);
 	});
 	var qs = (function(a) {
