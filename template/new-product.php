@@ -51,6 +51,9 @@
 							<option value="trademarksearch" <?php echo isset($aProductDetails['type']) && $aProductDetails['type'] == "trademarksearch" ? "selected" : ""; ?>>trademarksearch</option>
 							
 							<option value="trademarkwatch" <?php echo isset($aProductDetails['type']) && $aProductDetails['type'] == "trademarkwatch" ? "selected" : ""; ?>>trademarkwatch</option>
+							<option value="pakistan" <?php echo isset($aProductDetails['type']) && $aProductDetails['type'] == "pakistan" ? "selected" : ""; ?>>pakistan</option>
+							<option value="ein" <?php echo isset($aProductDetails['type']) && $aProductDetails['type'] == "ein" ? "selected" : ""; ?>>ein</option>
+							<option value="itin" <?php echo isset($aProductDetails['type']) && $aProductDetails['type'] == "itin" ? "selected" : ""; ?>>itin</option>
                         </select>
                     </div>
                     <div class="form-group col-md-3">

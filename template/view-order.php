@@ -6,6 +6,7 @@
     $aAction = isset($context['action']) && !empty($context['action']) ? $context['action'] : 'view_order_details';
 ?>
 <div class="wrap container-fluid">
+
     <style>
         /* Custom styles for detailed view */
         .details-section {
@@ -64,6 +65,21 @@
             height: auto;
             display: block;
         }
+        .download-button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: white; /* Change background to white */
+            color: black; /* Change text color to black */
+            text-decoration: none;
+            border-radius: 4px;
+ margin-top: 10px;
+            border: 1px solid #ccc; /* Optional: Add border for better visibility */
+        }
+        .download-button:focus,
+        .download-button:active {
+            color: black; /* Keep text color black */
+            outline: none; /* Remove outline if desired */
+        }
     </style>
 
     <!-- Basic Info Section -->
@@ -109,14 +125,19 @@
                 <th>Logo</th>
                 <td>
                     <?php
-                    // Display the image from the media attachment ID
+                    // Check if the logo file is uploaded
                     if (!empty($entry['logo_file'])) {
-                        $aLogoFile = strpos($entry['logo_file'], ",") === true ? explode(",",$entry['logo_file']) : [$entry['logo_file']];
-                        foreach($entry['logo_file'] as $logoFile) {
-                            echo wp_get_attachment_image($logoFile, 'medium', false, array('class' => 'logo-image'));
-                        }
+                        // Get the logo image HTML
+                        echo wp_get_attachment_image($entry['logo_file'], 'medium', false, array('class' => 'logo-image'));
+                        
+                        // Get the logo URL for downloading
+                        $logo_url = wp_get_attachment_url($entry['logo_file']);
+                        
+                        // Provide a download button
+                        echo '<br><a href="' . esc_url($logo_url) . '" download class="download-button">Download Logo</a>';
                     } else {
-                        echo 'No logo uploaded.';
+                        // Display "Image not uploaded" text if no logo is uploaded
+                        echo 'Image not uploaded';
                     }
                     ?>
                 </td>

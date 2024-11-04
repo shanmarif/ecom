@@ -120,6 +120,7 @@ class Orders_List extends WP_List_Table {
 	public function get_columns() {
 		$columns = [
 			'cb' => '<input type="checkbox" />',
+			// 'id' => __( 'Order ID', 'sp' ),
 			'name' => __( 'Name', 'sp' ),
 			'email' => __( 'Email', 'sp' ),
 			'phone_number' => __( 'Phone No.', 'sp' ),
