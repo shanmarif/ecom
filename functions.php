@@ -939,7 +939,7 @@ $aEmailPlaceHolder['%%ORDER-NOTE%%'] = $sNotes;
 $aEmailPlaceHolder['%%ORDER-DETAILS%%'] = $sOrderDetails;
 $file = get_template_directory()."/wp-html-mail/template.html";
 if($bIsAdmin){
-	$aEmails = ["sales@trade-mark.pk", "orders@trade-mark.pk"];  // Changed email address
+	$aEmails = [SALES_EMAIL_ADD, ORDER_ALERT_EMAIL];  // Changed email address
 	$file = get_template_directory()."/wp-html-mail/order-receipt.html";
 }
 	if(file_exists($file)){
@@ -950,7 +950,7 @@ if($bIsAdmin){
 		$to = $sEmail;
 		$subject = 'New Order Generated';
 		$message = $sEmailTemplate;
-		$headers[] = 'From: Sales <sales@trade-mark.pk>';
+		$headers[] = 'From: Sales <'.SALES_EMAIL_ADD.'>';
 		wp_mail($to, $subject, $message, $headers);
 	}
 }
