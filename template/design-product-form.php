@@ -12,7 +12,7 @@
     ];
 ?>
 
-<script type="text/javascript" defer="defer">
+<script type="text/javascript">
     var cart_state = {};
     cart_state.product = JSON.parse('<?php echo json_encode($aProductSpecificDetails); ?>');
     cart_state.total_price = parseInt(<?php echo $aProductDetails['price']; ?>);
@@ -47,7 +47,6 @@
         <input name="product_name" value="<?php echo $aProductDetails['prod_name']; ?>" type="hidden" />
         <input name="package_name" value="<?php echo $aProductDetails['name']; ?>" type="hidden" />
         <input name="product_id" value="<?php echo $aProductDetails['prod_id']; ?>" type="hidden" />
-        <input name="product_type" value="<?php echo $aProductDetails['prod_type']; ?>" type="hidden" />
         
         <!-- Image Upload Section -->
         <div class="input-container">

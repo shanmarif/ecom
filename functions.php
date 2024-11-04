@@ -5,6 +5,7 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 
 require_once( 'includes/EcomAdmin.php' );
 require_once( 'includes/ProductsList.php' );
+require_once( 'includes/OrdersList.php' );
 require_once( 'includes/GroupList.php' );
 require_once( 'includes/PackagesList.php' );
 require_once( 'includes/PaypalIPN.php');
@@ -372,16 +373,20 @@ function add_product_to_cart() {
         echo 'You targeted the right function, but sorry, your nonce did not verify.';
         die();
     } else {
-    	$base64File = "-";
+    	$base64File = [];
     	if(isset($_FILES['product_images']) && !empty($_FILES['product_images'])){
+        try{
 			$uploadedfiles = $_FILES['product_images'];
-			foreach($uploadedfiles as $uploadedfile) {
-				if(!empty($uploadedfile['tmp_name'])){
-					$sUploadFile = file_get_contents($uploadedfile['tmp_name']);
-					$type = pathinfo($uploadedfile['name'], PATHINFO_EXTENSION);
+            foreach($uploadedfiles['name'] as $key => $value) {
+				if(!empty($uploadedfiles['tmp_name'][$key])){
+					$sUploadFile = file_get_contents($uploadedfiles['tmp_name'][$key]);
+					$type = pathinfo($uploadedfiles['name'][$key], PATHINFO_EXTENSION);
 					$base64File[] = 'data:image/' . $type . ';base64,' . base64_encode($sUploadFile);
 				}
 			}
+            } catch(\Exception $e){
+            print_r($e);exit;
+            }
 		}
 		$aTradeMarkData = get_session_value('trademark_data',[]);
 		$aTradeMarkData['products'][] = [
@@ -511,7 +516,6 @@ function remove_from_cart_additional_service(){
 
 add_action('wp_ajax_checkout', 'checkout');
 add_action('wp_ajax_nopriv_checkout', 'checkout');
-
 function checkout(){
 	try {
 		if(!empty($_POST['paymentmethod'])){
@@ -520,15 +524,15 @@ function checkout(){
 			switch ($_POST['paymentmethod']){
 				case "paypal":
 					$aParamDetails = generatePaypalOrder($aOrderDetail);
-					sendOrderGenerateNotificationToCustomer($aOrderDetail);
+					sendOrderGenerateNotificationToCustomer($aOrderDetail); // Added for PayPal
 					break;
 				case "stripe":
 					$aParamDetails = generateStripeOrder($aOrderDetail);
-					sendOrderGenerateNotificationToCustomer($aOrderDetail);
+					sendOrderGenerateNotificationToCustomer($aOrderDetail); // Added for Stripe
 					break;
 				case "worldpay":
 					$aParamDetails = generateWorldPayOrder($aOrderDetail);
-					sendOrderGenerateNotificationToCustomer($aOrderDetail);
+					sendOrderGenerateNotificationToCustomer($aOrderDetail); // Added for WorldPay
 					break;
 				default:
 					sendOrderGenerateNotificationToCustomer($aOrderDetail);
@@ -542,6 +546,7 @@ function checkout(){
 		echo "<pre>";print_r($e);exit;
 	}
 }
+
 
 function generateOrder($sPaymentMethod){
 	try {
@@ -603,14 +608,14 @@ function sendOrderGenerateNotificationToCustomer($aOrderDetails){
 			$to = $sEmail;
 			$subject = 'New Order Generated';
 			$message = getOrderGenerationEmailTemplate($aOrderDetails);
-			$headers[] = 'From: Sales <sales@ule.ae>';
+			$headers[] = 'From: Sales <'.SALES_EMAIL_ADD.'>';
 			wp_mail($to, $subject, $message, $headers);
 		}
-		$to = "orders@ule.ae"; // Changed email address
+		$to = ORDER_ALERT_EMAIL; // Changed email address
 		$subject = 'New Order Generated';
 		$message = getOrderGenerationEmailTemplate($aOrderDetails, true);
-		$headers[] = 'From: Sales <sales@ule.ae>';
-		$headers[] = 'CC: Orders <orders@ule.ae>';
+		$headers[] = 'From: Sales <'.SALES_EMAIL_ADD.'>';
+		$headers[] = 'CC: Orders <'.ORDER_ALERT_EMAIL.'>';
 		wp_mail($to, $subject, $message, $headers); // Use wp_mail to send the email
 	}
 }
@@ -934,7 +939,7 @@ $aEmailPlaceHolder['%%ORDER-NOTE%%'] = $sNotes;
 $aEmailPlaceHolder['%%ORDER-DETAILS%%'] = $sOrderDetails;
 $file = get_template_directory()."/wp-html-mail/template.html";
 if($bIsAdmin){
-	$aEmails = ["sales@ule.ae", "orders@ule.ae"];  // Changed email address
+	$aEmails = [SALES_EMAIL_ADD, ORDER_ALERT_EMAIL];  // Changed email address
 	$file = get_template_directory()."/wp-html-mail/order-receipt.html";
 }
 	if(file_exists($file)){
@@ -945,7 +950,7 @@ if($bIsAdmin){
 		$to = $sEmail;
 		$subject = 'New Order Generated';
 		$message = $sEmailTemplate;
-		$headers[] = 'From: Sales <sales@ule.ae>';
+		$headers[] = 'From: Sales <'.SALES_EMAIL_ADD.'>';
 		wp_mail($to, $subject, $message, $headers);
 	}
 }
@@ -971,4 +976,3 @@ function getOrderDetailHtml($aItem){
 	$sOrderDetails .= "</ul>";
 	return $sOrderDetails;
 }
-
